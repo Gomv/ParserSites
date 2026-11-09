@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="ParserSites.Android/ParserSites.Android.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="ParserSites.Browser/ParserSites.Browser.csproj" />
+  <Project Path="ParserSites.Desktop/ParserSites.Desktop.csproj" />
+  <Project Path="ParserSites.iOS/ParserSites.iOS.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="ParserSites/ParserSites.csproj" />
+</Solution>

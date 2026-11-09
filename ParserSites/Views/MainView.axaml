@@ -1,0 +1,84 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:ParserSites.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ParserSites.Views.MainView"
+             x:DataType="vm:MainViewModel">
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainViewModel />
+    </Design.DataContext>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <GridSplitter Width=".1"
+                      Padding="0"
+                      BorderThickness="0 0 .5 0" 
+                      ShowsPreview="True" 
+                      Margin="-1"
+                      Grid.Column="1"
+                      Background="Transparent"
+                      ZIndex="1000">
+            <GridSplitter.BorderBrush>
+                <SolidColorBrush Color="Silver" Opacity=".25"/>
+            </GridSplitter.BorderBrush>
+            <GridSplitter.Effect>
+                <DropShadowEffect Color="DimGray" Opacity="1" BlurRadius="10"/>
+            </GridSplitter.Effect>
+        </GridSplitter>
+
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="5 5 0 0">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="25"/>
+                </Grid.ColumnDefinitions>
+            
+                <TextBox Grid.Column="0"
+                         PlaceholderText="Введите сайт для парсинга" 
+                         VerticalAlignment="Top" 
+                         CornerRadius="3 0 0 0"
+                         HorizontalAlignment="Stretch"
+                         Name="SiteAddress"
+                         BorderBrush="Black"
+                         BorderThickness=".5">
+                </TextBox>
+
+                <Button Grid.Column="1"
+                         VerticalAlignment="Top" 
+                         HorizontalAlignment="Stretch"
+                         Content = "..."
+                         CornerRadius="0 3 0 0"
+                         Height="{Binding #SiteAddress.Bounds.Height}"
+                         Background="Transparent"
+                         BorderBrush="Black"
+                         Click="Button_Click"
+                         BorderThickness="0 .5 .5 .5">
+                </Button>
+
+            </Grid>
+
+            <Grid Grid.Row="1" Margin="5 .75 0 5">
+                <ListBox BorderBrush="Black" BorderThickness=".5">
+                    
+                </ListBox>
+            </Grid>
+
+
+        </Grid>
+
+    </Grid>
+</UserControl>
