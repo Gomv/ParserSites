@@ -13,28 +13,17 @@
     </Design.DataContext>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="500" MinWidth="500"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <GridSplitter Width=".1"
-                      Padding="0"
-                      BorderThickness="0 0 .5 0" 
-                      ShowsPreview="True" 
-                      Margin="-1"
-                      Grid.Column="1"
-                      Background="Transparent"
-                      ZIndex="1000">
-            <GridSplitter.BorderBrush>
-                <SolidColorBrush Color="Silver" Opacity=".25"/>
-            </GridSplitter.BorderBrush>
-            <GridSplitter.Effect>
-                <DropShadowEffect Color="DimGray" Opacity="1" BlurRadius="10"/>
-            </GridSplitter.Effect>
-        </GridSplitter>
+        <Grid Grid.Column="0" MinWidth="500">
 
-        <Grid Grid.Column="0">
+            <Grid.Background>
+                <SolidColorBrush Color="Silver" Opacity=".3"/>
+            </Grid.Background>
+
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -52,7 +41,7 @@
                          VerticalAlignment="Top" 
                          CornerRadius="3 0 0 0"
                          HorizontalAlignment="Stretch"
-                         Name="SiteAddress"
+                         x:Name="SiteAddress"
                          BorderBrush="Black"
                          BorderThickness=".5">
                 </TextBox>
@@ -66,19 +55,54 @@
                          Background="Transparent"
                          BorderBrush="Black"
                          Click="Button_Click"
+                         IsEnabled="{Binding #SiteAddress, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                          BorderThickness="0 .5 .5 .5">
+                    <Button.Styles>
+                        <Style Selector="Button:disabled">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Style>
+                    </Button.Styles>
                 </Button>
 
             </Grid>
 
             <Grid Grid.Row="1" Margin="5 .75 0 5">
-                <ListBox BorderBrush="Black" BorderThickness=".5">
+                <ListBox BorderBrush="Black" BorderThickness=".5" DataContext="{Binding GetSite}">
                     
                 </ListBox>
             </Grid>
 
 
         </Grid>
+
+        <GridSplitter Width=".1"
+                      Padding="0"
+                      BorderThickness="0 0 0 0" 
+                      Margin="0"
+                      Grid.Column="1">
+
+            <GridSplitter.Background>
+                <SolidColorBrush Color="Silver" Opacity=".3"/>
+            </GridSplitter.Background>
+
+        </GridSplitter>
+
+        <Grid Grid.Column="2">
+            <Grid.Background>
+                <SolidColorBrush Color="WhiteSmoke" Opacity=".35"/>
+            </Grid.Background>
+
+            <Grid>
+                <TabControl Margin="5">
+                    <TabItem Header="Данные с сайта">
+                    </TabItem>
+                    <TabItem Header="Табличный вариант">
+                    </TabItem>
+                </TabControl>
+            </Grid>
+
+        </Grid>
+        
 
     </Grid>
 </UserControl>
