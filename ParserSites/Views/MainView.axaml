@@ -3,7 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:ParserSites.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="1900" d:DesignHeight="1000"
              x:Class="ParserSites.Views.MainView"
              x:DataType="vm:MainViewModel">
     <Design.DataContext>
@@ -13,7 +13,7 @@
     </Design.DataContext>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="500" MinWidth="500"/>
+            <ColumnDefinition Width="500" MinWidth="500" MaxWidth="1000"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
