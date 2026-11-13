@@ -11,12 +11,50 @@
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainViewModel />
     </Design.DataContext>
-    <Grid>
+    <Grid x:Name="MainGrid">
+
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="500" MinWidth="500" MaxWidth="1000"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+
+        <!--Подгрузка сайта-->
+        <NativeWebView 
+            IsVisible="False"
+            x:Name="ParsersSites"
+            NavigationCompleted="ParsersSites_NavigationCompleted"/>
+        <!--Подгрузка сайта-->
+
+        <Border Grid.ColumnSpan="3" Width="500" Height="200"
+                VerticalAlignment="Center" HorizontalAlignment="Center"
+                ZIndex="1000" IsVisible="{Binding !#MainGrid.IsEffectivelyEnabled}"
+                BorderBrush="Silver" BorderThickness=".5" CornerRadius="5"
+                Opacity="1" IsEnabled="True">
+            <Border.Background>
+                <SolidColorBrush Color="Silver" Opacity=".5"/>
+            </Border.Background>
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="90"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <TextBlock FontWeight="Bold" FontFamily="Mono" 
+                           Grid.Row="0"
+                           VerticalAlignment="Center" HorizontalAlignment="Center">
+                    З а г р у ж а е т с я
+                </TextBlock>
+                
+                <TextBlock                     
+                    Text="{Binding #SiteAddress.Text}"
+                    FontStyle="Italic" Margin="30 5" 
+                    TextWrapping="WrapWithOverflow" 
+                    VerticalAlignment="Top" HorizontalAlignment="Center"
+                    Grid.Row="1"/>
+            </Grid>
+        </Border>
 
         <Grid Grid.Column="0" MinWidth="500">
 
@@ -43,6 +81,7 @@
                          HorizontalAlignment="Stretch"
                          x:Name="SiteAddress"
                          BorderBrush="Black"
+                         KeyDown="SiteAddress_KeyDown"
                          BorderThickness=".5">
                 </TextBox>
 
@@ -67,7 +106,7 @@
             </Grid>
 
             <Grid Grid.Row="1" Margin="5 .75 0 5">
-                <ListBox BorderBrush="Black" BorderThickness=".5" DataContext="{Binding GetSite}">
+                <ListBox BorderBrush="Black" BorderThickness=".5" ItemsSource="{Binding GetSite}" CornerRadius="0 0 3 3">
                     
                 </ListBox>
             </Grid>
@@ -95,6 +134,8 @@
             <Grid>
                 <TabControl Margin="5">
                     <TabItem Header="Данные с сайта">
+                        <Grid>
+                        </Grid>
                     </TabItem>
                     <TabItem Header="Табличный вариант">
                     </TabItem>
