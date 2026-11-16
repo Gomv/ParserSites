@@ -2,6 +2,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using ParserSites.Classes;
+using ParserSites.Model;
 using ParserSites.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,8 @@ namespace ParserSites.Views;
 public partial class MainView : UserControl
 {
     private string Site { get; set; } = "";
+
+    private List<Tag<object>> lstParserLine { get; set; } = new List<Tag<object>>();
 
     public MainView()
     {
@@ -63,25 +66,97 @@ public partial class MainView : UserControl
 
     private List<string> AnalysisText(string text)
     {
-        // 1. Удаляем содержимое <script> и <style>
-        string cleaned = Regex.Replace(text, @"<script[^>]*>[\s\S]*?</script>", "", RegexOptions.IgnoreCase);
-        cleaned = Regex.Replace(cleaned, @"<style[^>]*>[\s\S]*?</style>", "", RegexOptions.IgnoreCase);
+        bool isAtribute = false;
+        int generation = 0;
 
-        // 2. Заменяем блочные теги на переносы строк (чтобы текст не слипался)
-        cleaned = Regex.Replace(cleaned, @"<(br|p|div|h1|h2|h3|li|tr)[^>]*>", "\n", RegexOptions.IgnoreCase);
+        string finalTag = "</html"; //что бы не случилось если это финальный тэг цикл вырубится
+        string tag = "";
 
-        // 3. Удаляем все оставшиеся HTML-теги
-        cleaned = Regex.Replace(cleaned, @"<[^>]+>", "");
+        var arrWords = text.Split(" ");
 
-        // 4. Декодируем HTML-сущности (&nbsp;, &amp;, &quot; и т.д.)
-        cleaned = WebUtility.HtmlDecode(cleaned);
+        lstParserLine.Clear();
 
-        // 5. Разбиваем на строки, убираем пустые и лишние пробелы
-        var lines = cleaned.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
-                           .Select(line => line.Trim())
-                           .Where(line => !string.IsNullOrWhiteSpace(line))
-                           .ToList();
+        ///Наполняем словарь
 
-        return lines;
+        for (int i = 0; i < arrWords.Length; i++)
+        {
+            string word = arrWords[i];
+
+            if (word.Contains("<") && !word.Contains("</"))
+            {
+                tag = word.Trim('<');
+
+                if (tag.Count() == 0)
+                {
+                    i++;
+                    tag = arrWords[i];
+                }
+
+                lstParserLine.Add(new()
+                    {
+                        Name = tag,
+                        Position = i
+                    }
+                );
+
+                isAtribute = true;
+                continue;
+            }
+
+            if (lstParserLine.Count() != 0)
+            {
+                if (word.Contains(">"))
+                {
+                    isAtribute = false;
+                }
+
+                if (isAtribute)
+                {
+                    while (word.Contains("=") && word.Split('=').Count() == 2)
+                    {
+                        if (word.Contains("="))
+                        {
+                            if (word.Split("=").Count() >= 2)
+                            {
+                                word = string.Join("=", word.Split("=").Where(s => !string.IsNullOrEmpty(s)));
+                            }
+                            else
+                            {
+                                i++;
+                                word += arrWords[i];
+                            }
+                        }
+                        else
+                        {
+                            i++;
+                            word += arrWords[i];
+                        }
+                    }
+
+                    /*Атрибут*/
+
+                    var lstAtr = word.Split("=");
+
+                    lstParserLine.Last().Atribute.Add
+                    (
+                        new Atribute()
+                        {
+                            Name = lstAtr[0],
+                            Value = lstAtr[1]
+                        }
+                    );
+                }
+                else
+                {
+                    /*ТекстВнутри*/
+                    lstParserLine.Last().Value += word;
+                }
+            }
+        }
+
+        ///
+
+
+        return new();
     }
 }
