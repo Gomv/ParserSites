@@ -67,107 +67,96 @@ public partial class MainView : UserControl
 
     private List<string> AnalysisText(string text)
     {
-        bool isAtribute = false;
-        int generation = 0;
-
-        string finalTag = "</html"; //что бы не случилось если это финальный тэг цикл вырубится
-        string tag = "";
-
+        int positionTag = 0;
+        int finalTag = text.LastIndexOf("</html");
         text = JsonSerializer.Deserialize<string>(text);
-        var arrWords = text.Split(" ");
 
-        lstParserLine.Clear();
-
-        ///Наполняем словарь
-
-        for (int i = 0; i < arrWords.Length; i++)
+        while (positionTag != finalTag)
         {
-            string word = arrWords[i];
+            var openTag = text.IndexOf("<", positionTag);
+            var space = text.IndexOf(" ", openTag);
 
-            if (word.Contains("<") && !word.Contains("</"))
+            positionTag = openTag;
+
+            if (space - openTag == 1) //Ловить условия логических операций
             {
-                tag = word.Trim('<');
-
-                if (tag.Count() == 0)
-                {
-                    i++;
-                    tag = arrWords[i];
-                }
-
-                lstParserLine.Add(new()
-                    {
-                        Name = tag,
-                        Position = i
-                    }
-                );
-
-                isAtribute = true;
                 continue;
             }
 
-            if (lstParserLine.Count() != 0)
-            {
-                if (word.Contains(">"))
-                {
-                    isAtribute = false;
-                }
+            string nameTag = text[(positionTag + 1)..space];
 
-                if (isAtribute)
+            var closeTag = text.IndexOf(">", positionTag);
+
+            lstParserLine.Add(new()
                 {
-                    while (word.Contains("=") && word.Split('=').Count() == 2)
+                    Name = nameTag,
+                }
+            );
+
+            var lstAtr = text[(positionTag + nameTag.Count() + 2)..closeTag].Split(" ");
+
+            for (var i = 0; i < lstAtr.Count(); i++)
+            {
+                string word = lstAtr[i];
+
+                while (word.Contains("=") && word.Split('=').Count() == 2)
+                {
+                    if (word.Contains("="))
                     {
-                        if (word.Contains("="))
+                        if (word.Split("=").Count() >= 2)
                         {
-                            if (word.Split("=").Count() >= 2)
+                            word = string.Join("=", word.Split("=").Where(s => !string.IsNullOrEmpty(s)));
+                            if (word.Split("=")[1].Count('\"') != 2)
                             {
-                                word = string.Join("=", word.Split("=").Where(s => !string.IsNullOrEmpty(s)));
-                                if (word.Split("=")[1].Count('\"') != 2)
-                                {
-                                    i++;
-                                    word += " " + arrWords[i];
-                                }
-                                else
-                                {
-                                    break;
-                                }
+                                i++;
+                                word += " " + lstAtr[i];
                             }
                             else
                             {
-                                i++;
-                                word += arrWords[i];
+                                break;
                             }
                         }
                         else
                         {
                             i++;
-                            word += arrWords[i];
+                            word += lstAtr[i];
                         }
                     }
-
-                    /*Атрибут*/
-
-                    var lstAtr = word.Split("=");
-
-                    lstParserLine.Last().Atribute.Add
-                    (
-                        new Atribute()
-                        {
-                            Name = lstAtr[0],
-                            Value = lstAtr[1]
-                        }
-                    );
+                    else
+                    {
+                        i++;
+                        word += lstAtr[i];
+                    }
                 }
-                else
-                {
-                    /*ТекстВнутри*/
-                    lstParserLine.Last().Value += word;
-                }
+
+                var lst = word.TrimEnd('/').Split("=");
+
+                lstParserLine.Last().Atribute.Add
+                (
+                    new Atribute()
+                    {
+                        Name = lst[0],
+                        Value = lst[1]
+                    }
+                );
             }
+
+            if (text.IndexOf("/>", positionTag) - closeTag == 1)
+            {
+                positionTag = closeTag + 1;
+                continue;
+            }
+
+            var closeNode = text.IndexOf($"</{nameTag}", positionTag);
+
+            string elm = text[(closeTag + 1)..closeNode];
+
+            lstParserLine.Last().Value = elm;
+
+            positionTag = closeTag + 1;
         }
-
-        ///
-
 
         return new();
     }
+
 }
