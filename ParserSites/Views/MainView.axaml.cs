@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -72,6 +73,7 @@ public partial class MainView : UserControl
         string finalTag = "</html"; //что бы не случилось если это финальный тэг цикл вырубится
         string tag = "";
 
+        text = JsonSerializer.Deserialize<string>(text);
         var arrWords = text.Split(" ");
 
         lstParserLine.Clear();
@@ -119,6 +121,15 @@ public partial class MainView : UserControl
                             if (word.Split("=").Count() >= 2)
                             {
                                 word = string.Join("=", word.Split("=").Where(s => !string.IsNullOrEmpty(s)));
+                                if (word.Split("=")[1].Count('\"') != 2)
+                                {
+                                    i++;
+                                    word += " " + arrWords[i];
+                                }
+                                else
+                                {
+                                    break;
+                                }
                             }
                             else
                             {
