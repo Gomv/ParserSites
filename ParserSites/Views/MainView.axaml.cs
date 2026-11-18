@@ -83,15 +83,29 @@ public partial class MainView : UserControl
                 continue;
             }
 
-            string nameTag = text[(positionTag + 1)..space];
-
             var closeTag = text.IndexOf(">", positionTag);
+
+            space = space > closeTag ? closeTag : space;
+
+            string nameTag = (text[(positionTag + 1)..space]).Trim();
+
+            if (nameTag.Contains("/"))
+            {
+                positionTag = closeTag + 1;
+                continue;
+            }
 
             lstParserLine.Add(new()
                 {
                     Name = nameTag,
                 }
             );
+
+            if (space == closeTag)
+            {
+                positionTag = closeTag + 1;
+                continue;
+            }
 
             var lstAtr = text[(positionTag + nameTag.Count() + 2)..closeTag].Split(" ");
 
@@ -147,11 +161,14 @@ public partial class MainView : UserControl
                 continue;
             }
 
-            var closeNode = text.IndexOf($"</{nameTag}", positionTag);
+            var closeNode = FindCloseTag(text, nameTag, positionTag);
 
-            string elm = text[(closeTag + 1)..closeNode];
+            if (closeNode != -1)
+            {
+                string elm = text[(closeTag + 1)..closeNode];
 
-            lstParserLine.Last().Value = elm;
+                lstParserLine.Last().Value = elm;
+            }
 
             positionTag = closeTag + 1;
         }
@@ -159,4 +176,69 @@ public partial class MainView : UserControl
         return new();
     }
 
+    private int FindCloseTag(string text, string nameTag, int positionOpenTag)
+    {
+        int pos = positionOpenTag;
+        Dictionary<int, string> dctOpen = new();
+
+        while(text.IndexOf(nameTag, pos) != -1)
+        {
+            var tmpPos = text.IndexOf(nameTag, pos);
+
+            //Костылём поправил если тэг поподается в тексте
+
+            if (text[text.LastIndexOf("<", tmpPos)..tmpPos].Contains("/")) 
+            {
+                var index = text.LastIndexOf("<", tmpPos);
+                var tag = text[text.LastIndexOf("<", tmpPos)..(tmpPos + nameTag.Count())];
+
+                if (!dctOpen.ContainsKey(index))
+                {
+                    dctOpen.Add(index, $"</{nameTag}");   //Косяк ловлю такое ./some-lib/javascript..
+                }
+
+                pos = index + tag.Count();
+            }
+            else
+            {
+
+                var index = text.IndexOf(nameTag, pos);
+
+                if (!dctOpen.ContainsKey(index))
+                {
+                    dctOpen.Add(index, nameTag);
+                }
+
+                pos = index + nameTag.Count();
+            }
+        }
+
+        if (dctOpen.Count(s => s.Value == $"</{nameTag}") == 0)
+        {
+            return -1;
+        }
+
+        dctOpen.OrderBy(s => s.Key);
+
+        int Open = 0;
+
+        foreach (var item in dctOpen) 
+        {
+            if (item.Value.Contains("</"))
+            {
+                Open--;
+            }
+            else
+            {
+                Open++;
+            }
+
+            if (Open == 0)
+            {
+                return item.Key;
+            }
+        }
+
+        return -1;
+    }
 }
