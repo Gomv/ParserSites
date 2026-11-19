@@ -218,9 +218,10 @@ public partial class MainView : UserControl
             return -1;
         }
 
-        dctOpen.OrderBy(s => s.Key);
+        dctOpen = dctOpen.OrderBy(s => s.Key).ToDictionary(s => s.Key, s => s.Value);
 
-        int Open = 0;
+        int Open = 1; //мне было лень поправить код выше что бы искать начинать с открывающего,
+                      //тэга, но этот вариант то же логичный, так как заходим сюда с позиции открывающего
 
         foreach (var item in dctOpen) 
         {
