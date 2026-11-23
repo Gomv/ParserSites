@@ -68,10 +68,9 @@ public partial class MainView : UserControl
     private List<string> AnalysisText(string text)
     {
         int positionTag = 0;
-        int finalTag = text.LastIndexOf("</html");
         text = JsonSerializer.Deserialize<string>(text);
 
-        while (positionTag != finalTag)
+        while (positionTag != text.LastIndexOf("</html"))
         {
             var openTag = text.IndexOf("<", positionTag);
             var space = text.IndexOf(" ", openTag);
@@ -187,7 +186,7 @@ public partial class MainView : UserControl
 
             //Костылём поправил если тэг поподается в тексте
 
-            if (text[text.LastIndexOf("<", tmpPos)..tmpPos].Contains("/")) 
+            if (text[text.LastIndexOf("<", tmpPos)..tmpPos].Contains("</")) 
             {
                 var index = text.LastIndexOf("<", tmpPos);
                 var tag = text[text.LastIndexOf("<", tmpPos)..(tmpPos + nameTag.Count())];
@@ -201,7 +200,6 @@ public partial class MainView : UserControl
             }
             else
             {
-
                 var index = text.IndexOf(nameTag, pos);
 
                 if (!dctOpen.ContainsKey(index))
@@ -217,8 +215,6 @@ public partial class MainView : UserControl
         {
             return -1;
         }
-
-        dctOpen = dctOpen.OrderBy(s => s.Key).ToDictionary(s => s.Key, s => s.Value);
 
         int Open = 1; //мне было лень поправить код выше что бы искать начинать с открывающего,
                       //тэга, но этот вариант то же логичный, так как заходим сюда с позиции открывающего
@@ -240,6 +236,6 @@ public partial class MainView : UserControl
             }
         }
 
-        return -1;
+        return -1; //Следовательно тэг закрылся сам в себе
     }
 }
