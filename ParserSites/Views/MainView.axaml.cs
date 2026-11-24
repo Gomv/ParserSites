@@ -69,24 +69,31 @@ public partial class MainView : UserControl
     {
         int positionTag = 0;
         text = JsonSerializer.Deserialize<string>(text);
+        text = WebUtility.HtmlDecode(text);
 
         while (positionTag != text.LastIndexOf("</html"))
         {
             var openTag = text.IndexOf("<", positionTag);
-            var space = text.IndexOf(" ", openTag);
+            var space = text.IndexOf(" ", openTag)  == -1 ? text.Count() : text.IndexOf(" ", openTag);
 
             positionTag = openTag;
 
             if (space - openTag == 1) //Ловить условия логических операций
             {
+                positionTag = space + 1;
                 continue;
             }
 
-            var closeTag = text.IndexOf(">", positionTag);
-
-            space = space > closeTag ? closeTag : space;
-
             string nameTag = (text[(positionTag + 1)..space]).Trim();
+
+            var closeTag = nameTag != "!--" ? text.IndexOf(">", positionTag) : text.IndexOf("-->", positionTag);
+
+            if(space > closeTag)
+            {
+                space = closeTag; 
+                nameTag = (text[(positionTag + 1)..space]).Trim();
+                closeTag = nameTag != "!--" ? text.IndexOf(">", positionTag) : text.IndexOf("-->", positionTag);
+            }
 
             if (nameTag.Contains("/"))
             {
@@ -94,82 +101,110 @@ public partial class MainView : UserControl
                 continue;
             }
 
-            lstParserLine.Add(new()
-                {
-                    Name = nameTag,
-                }
-            );
-
             if (space == closeTag)
             {
                 positionTag = closeTag + 1;
                 continue;
             }
 
-            var lstAtr = text[(positionTag + nameTag.Count() + 2)..closeTag].Split(" ");
-
-            for (var i = 0; i < lstAtr.Count(); i++)
+            lstParserLine.Add(new()
             {
-                string word = lstAtr[i];
+                Name = nameTag,
+            }
+            );
 
-                while (word.Contains("=") && word.Split('=').Count() == 2)
+            //Проверяем комментарии
+            if (nameTag != "!--")
+            {
+                var lstAtr = text[(positionTag + nameTag.Count() + 2)..closeTag].Split(" ");
+
+                //Жёсткий костыль но хочу проверить
+                try
                 {
-                    if (word.Contains("="))
+                    for (var i = 0; i < lstAtr.Count(); i++)
                     {
-                        if (word.Split("=").Count() >= 2)
+                        string word = lstAtr[i];
+
+                        while (word.Contains("=") && word.Split('=').Count() == 2)
                         {
-                            word = string.Join("=", word.Split("=").Where(s => !string.IsNullOrEmpty(s)));
-                            if (word.Split("=")[1].Count('\"') != 2)
+                            if (word.Contains("="))
                             {
-                                i++;
-                                word += " " + lstAtr[i];
+                                if (word.Split("=").Count() >= 2)
+                                {
+                                    word = string.Join("=", word.Split("=").Where(s => !string.IsNullOrEmpty(s)));
+                                    if (word.Split("=")[1].Count('\"') % 2 != 0)
+                                    {
+                                        i++;
+                                        word += " " + lstAtr[i];
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    i++;
+                                    word += lstAtr[i];
+                                }
                             }
                             else
                             {
-                                break;
+                                i++;
+                                word += lstAtr[i];
                             }
                         }
-                        else
-                        {
-                            i++;
-                            word += lstAtr[i];
-                        }
-                    }
-                    else
-                    {
-                        i++;
-                        word += lstAtr[i];
+
+                        var lst = word.TrimEnd('/').Split("=");
+
+                        lstParserLine.Last().Atribute.Add
+                        (
+                            new Atribute()
+                            {
+                                Name = lst[0],
+                                Value = lst[1]
+                            }
+                        );
                     }
                 }
-
-                var lst = word.TrimEnd('/').Split("=");
-
-                lstParserLine.Last().Atribute.Add
-                (
-                    new Atribute()
+                catch
+                {
+                    if (text.IndexOf("/>", positionTag) - closeTag == -1)
                     {
-                        Name = lst[0],
-                        Value = lst[1]
+                        positionTag = closeTag + 1;
+                        continue;
                     }
-                );
-            }
 
-            if (text.IndexOf("/>", positionTag) - closeTag == 1)
-            {
+                    lstParserLine.Remove(lstParserLine.Last());
+                    positionTag = closeTag + 1;
+                    continue;
+                }
+
+                if (text.IndexOf("/>", positionTag) - closeTag == -1)
+                {
+                    positionTag = closeTag + 1;
+                    continue;
+                }
+
+                var closeNode = FindCloseTag(text, nameTag, positionTag);
+
+                if (closeNode != -1)
+                {
+                    string elm = text[(closeTag + 1)..closeNode];
+
+                    lstParserLine.Last().Value = elm;
+                }
+
                 positionTag = closeTag + 1;
-                continue;
             }
-
-            var closeNode = FindCloseTag(text, nameTag, positionTag);
-
-            if (closeNode != -1)
+            else
             {
-                string elm = text[(closeTag + 1)..closeNode];
+                string elm = text[positionTag..(closeTag+3)];
 
                 lstParserLine.Last().Value = elm;
-            }
 
-            positionTag = closeTag + 1;
+                positionTag = closeTag + 1;
+            }
         }
 
         return new();
@@ -216,7 +251,7 @@ public partial class MainView : UserControl
             return -1;
         }
 
-        int Open = 1; //мне было лень поправить код выше что бы искать начинать с открывающего,
+        int Open = 0; //мне было лень поправить код выше что бы искать начинать с открывающего,
                       //тэга, но этот вариант то же логичный, так как заходим сюда с позиции открывающего
 
         foreach (var item in dctOpen) 
