@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace ParserSites.Views;
@@ -52,12 +53,13 @@ public partial class MainView : UserControl
     {
         if (e.IsSuccess)
         {
-            string? html = await((NativeWebView)sender).InvokeScript("document.documentElement.outerHTML");
+            string? html = await ((NativeWebView)sender).InvokeScript("document.documentElement.outerHTML");
 
             if (html != null)
             {
                 Site = html;
-                (this.DataContext as MainViewModel).GetSite = AnalysisText(Site);
+
+                var ddd = await Task.Run(() => AnalysisText(Site)); //Сделал заглушкой для получения результата
             }
         }
 
@@ -65,16 +67,23 @@ public partial class MainView : UserControl
         this.IsEnabled = true;
     }
 
-    private List<string> AnalysisText(string text)
+    private List<Tag<object>> AnalysisText(string text)
     {
+        lstParserLine.Clear();
         int positionTag = 0;
         text = JsonSerializer.Deserialize<string>(text);
         text = WebUtility.HtmlDecode(text);
 
-        while (positionTag != text.LastIndexOf("</html"))
+        int endHtml = text.LastIndexOf("</html", StringComparison.Ordinal);
+
+        while (positionTag != endHtml)
         {
-            var openTag = text.IndexOf("<", positionTag);
-            var space = text.IndexOf(" ", openTag)  == -1 ? text.Count() : text.IndexOf(" ", openTag);
+            var openTag = text.IndexOf('<', positionTag);
+            if (openTag == -1) break;
+
+            var space = text.IndexOf(' ', openTag);
+
+            if (space == -1) space = text.Length;
 
             positionTag = openTag;
 
@@ -84,18 +93,23 @@ public partial class MainView : UserControl
                 continue;
             }
 
-            string nameTag = (text[(positionTag + 1)..space]).Trim();
+            string nameTag = text[(positionTag + 1)..space].Trim();
 
-            var closeTag = nameTag != "!--" ? text.IndexOf(">", positionTag) : text.IndexOf("-->", positionTag);
+            var closeTag = nameTag != "!--"
+                ? text.IndexOf('>', positionTag)
+                : text.IndexOf("-->", positionTag, StringComparison.Ordinal);
+            if (closeTag == -1) break; //тег не закрыт до конца документа
 
-            if(space > closeTag)
+            if (space > closeTag)
             {
-                space = closeTag; 
-                nameTag = (text[(positionTag + 1)..space]).Trim();
-                closeTag = nameTag != "!--" ? text.IndexOf(">", positionTag) : text.IndexOf("-->", positionTag);
+                space = closeTag;
+                nameTag = text[(positionTag + 1)..space].Trim();
+                closeTag = nameTag != "!--"
+                    ? text.IndexOf('>', positionTag)
+                    : text.IndexOf("-->", positionTag, StringComparison.Ordinal);
             }
 
-            if (nameTag.Contains("/"))
+            if (nameTag.Contains('/'))
             {
                 positionTag = closeTag + 1;
                 continue;
@@ -110,54 +124,46 @@ public partial class MainView : UserControl
             lstParserLine.Add(new()
             {
                 Name = nameTag,
-            }
-            );
+            });
+
+            // Позиция начала тега в тексте — для дерева вложенности и UI
+            int newIndex = lstParserLine.Count - 1;
+            lstParserLine[newIndex].Position = positionTag;
+
+            int lastIndex = lstParserLine.Count - 1;
 
             //Проверяем комментарии
             if (nameTag != "!--")
             {
-                var lstAtr = text[(positionTag + nameTag.Count() + 2)..closeTag].Split(" ");
+                var lstAtr = text[(positionTag + nameTag.Length + 2)..closeTag].Split(' ');
 
                 //Жёсткий костыль но хочу проверить
                 try
                 {
-                    for (var i = 0; i < lstAtr.Count(); i++)
+                    for (var i = 0; i < lstAtr.Length; i++)
                     {
                         string word = lstAtr[i];
 
-                        while (word.Contains("=") && word.Split('=').Count() == 2)
+                        while (word.Contains('='))
                         {
-                            if (word.Contains("="))
+                            var parts = word.Split('=');
+                            if (parts.Length != 2) break;
+
+                            word = string.Join("=", parts.Where(s => s.Length > 0));
+                            if (word.Split('=')[1].Count(c => c == '\"') % 2 != 0)
                             {
-                                if (word.Split("=").Count() >= 2)
-                                {
-                                    word = string.Join("=", word.Split("=").Where(s => !string.IsNullOrEmpty(s)));
-                                    if (word.Split("=")[1].Count('\"') % 2 != 0)
-                                    {
-                                        i++;
-                                        word += " " + lstAtr[i];
-                                    }
-                                    else
-                                    {
-                                        break;
-                                    }
-                                }
-                                else
-                                {
-                                    i++;
-                                    word += lstAtr[i];
-                                }
+                                i++;
+                                word += " " + lstAtr[i];
                             }
                             else
                             {
-                                i++;
-                                word += lstAtr[i];
+                                break;
                             }
                         }
 
-                        var lst = word.TrimEnd('/').Split("=");
+                        var lst = word.TrimEnd('/').Split('=');
 
-                        lstParserLine.Last().Atribute.Add
+                        lstParserLine[lastIndex].Atribute.Add
                         (
                             new Atribute()
                             {
@@ -169,108 +175,99 @@ public partial class MainView : UserControl
                 }
                 catch
                 {
-                    if (text.IndexOf("/>", positionTag) - closeTag == -1)
+                    if (IsSelfClosing(text, closeTag))
                     {
+                        lstParserLine[newIndex].EndPosition = closeTag + 1;
                         positionTag = closeTag + 1;
                         continue;
                     }
 
-                    lstParserLine.Remove(lstParserLine.Last());
+                    lstParserLine.RemoveAt(lstParserLine.Count - 1);
                     positionTag = closeTag + 1;
                     continue;
                 }
 
-                if (text.IndexOf("/>", positionTag) - closeTag == -1)
+                if (IsSelfClosing(text, closeTag))
                 {
+                    lstParserLine[newIndex].EndPosition = closeTag + 1;
                     positionTag = closeTag + 1;
                     continue;
                 }
 
                 var closeNode = FindCloseTag(text, nameTag, positionTag);
 
+                // конец элемента: либо после "</имя>", либо (если закрылся сам в себя) после '>'
+                lstParserLine[newIndex].EndPosition = closeNode != -1
+                    ? closeNode + nameTag.Length + 3
+                    : closeTag + 1;
+
                 if (closeNode != -1)
                 {
                     string elm = text[(closeTag + 1)..closeNode];
 
-                    lstParserLine.Last().Value = elm;
+                    lstParserLine[lastIndex].Value = elm;
                 }
 
                 positionTag = closeTag + 1;
             }
             else
             {
-                string elm = text[positionTag..(closeTag+3)];
+                string elm = text[positionTag..(closeTag + 3)];
 
-                lstParserLine.Last().Value = elm;
+                lstParserLine[lastIndex].Value = elm;
+                lstParserLine[lastIndex].EndPosition = closeTag + 3; // "-->"
 
                 positionTag = closeTag + 1;
             }
         }
 
-        return new();
+        return lstParserLine;
     }
 
     private int FindCloseTag(string text, string nameTag, int positionOpenTag)
     {
-        int pos = positionOpenTag;
-        Dictionary<int, string> dctOpen = new();
+        string closePrefix = "</" + nameTag;
 
-        while(text.IndexOf(nameTag, pos) != -1)
+        int depth = 1;                 // открывающий тег уже «открыт» — это мы его вызвали
+        int pos = positionOpenTag + 1; // начинаем поиск ПОСЛЕ него
+
+        while (true)
         {
-            var tmpPos = text.IndexOf(nameTag, pos);
+            int lt = text.IndexOf('<', pos);
+            if (lt == -1) return -1;
 
-            //Костылём поправил если тэг поподается в тексте
+            var rest = text.AsSpan(lt);
 
-            if (text[text.LastIndexOf("<", tmpPos)..tmpPos].Contains("</")) 
+            if (rest.StartsWith(closePrefix) && IsNameBoundary(text, lt + closePrefix.Length))
             {
-                var index = text.LastIndexOf("<", tmpPos);
-                var tag = text[text.LastIndexOf("<", tmpPos)..(tmpPos + nameTag.Count())];
-
-                if (!dctOpen.ContainsKey(index))
-                {
-                    dctOpen.Add(index, $"</{nameTag}");   //Косяк ловлю такое ./some-lib/javascript..
-                }
-
-                pos = index + tag.Count();
+                depth--;
+                if (depth == 0) return lt;
+                pos = lt + 2;
+            }
+            else if (rest[0] == '<' && !rest.StartsWith("</") &&
+                     rest.Length > 1 + nameTag.Length &&
+                     rest.Slice(1).StartsWith(nameTag) &&
+                     IsNameBoundary(text, lt + 1 + nameTag.Length))
+            {
+                depth++;
+                pos = lt + 1;
             }
             else
             {
-                var index = text.IndexOf(nameTag, pos);
-
-                if (!dctOpen.ContainsKey(index))
-                {
-                    dctOpen.Add(index, nameTag);
-                }
-
-                pos = index + nameTag.Count();
+                pos = lt + 1; // любой другой тег или '<' в тексте
             }
         }
+    }
 
-        if (dctOpen.Count(s => s.Value == $"</{nameTag}") == 0)
-        {
-            return -1;
-        }
+    private static bool IsSelfClosing(string text, int closeTag)
+    {
+        return closeTag > 0 && text[closeTag - 1] == '/';
+    }
 
-        int Open = 0; //мне было лень поправить код выше что бы искать начинать с открывающего,
-                      //тэга, но этот вариант то же логичный, так как заходим сюда с позиции открывающего
-
-        foreach (var item in dctOpen) 
-        {
-            if (item.Value.Contains("</"))
-            {
-                Open--;
-            }
-            else
-            {
-                Open++;
-            }
-
-            if (Open == 0)
-            {
-                return item.Key;
-            }
-        }
-
-        return -1; //Следовательно тэг закрылся сам в себе
+    private static bool IsNameBoundary(string text, int index)
+    {
+        if (index >= text.Length) return true;
+        char c = text[index];
+        return c == '>' || c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '/';
     }
 }

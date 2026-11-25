@@ -15,6 +15,7 @@ namespace ParserSites.Model
         public T Value { get; set; }
 
         public int Position { get; set; } = -1;
+        public int EndPosition { get; set; } = -1;
     }
 
     public class Tag<T> : WordProperty<T>
