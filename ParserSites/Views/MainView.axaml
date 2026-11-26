@@ -39,6 +39,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="90"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="5"/>
                 </Grid.RowDefinitions>
                 
                 <TextBlock FontWeight="Bold" FontFamily="Mono" 
@@ -53,6 +54,9 @@
                     TextWrapping="WrapWithOverflow" 
                     VerticalAlignment="Top" HorizontalAlignment="Center"
                     Grid.Row="1"/>
+
+                <ProgressBar Grid.Row="2" VerticalAlignment="Bottom" IsIndeterminate="True" Height="20" Margin="0 5"/>
+
             </Grid>
         </Border>
 
@@ -106,9 +110,42 @@
             </Grid>
 
             <Grid Grid.Row="1" Margin="5 .75 0 5">
-                <ListBox BorderBrush="Black" BorderThickness=".5" ItemsSource="{Binding GetSite}" CornerRadius="0 0 3 3">
-                    
-                </ListBox>
+            <ListBox BorderBrush="Black" BorderThickness=".5"
+                    ItemsSource="{Binding GetSite}"
+                    SelectionChanged="ListBox_SelectionChanged"
+                    CornerRadius="0 0 3 3">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="{Binding Margin}" Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="&lt;" Foreground="#808080" />
+                        <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#569CD6" />
+                
+                            <ItemsControl ItemsSource="{Binding Atribute}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="4" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <TextBlock Text="{Binding Name}" Foreground="#9CDCFE" />
+                                            <TextBlock Text="=" Foreground="#D4D4D4" />
+                                            <TextBlock Text="{Binding Value}" Foreground="#CE9178" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                
+                            <TextBlock Text=" /&gt;" Foreground="#808080"
+                                        IsVisible="{Binding IsSelfClosing}" />
+                            <TextBlock Text="&gt;" Foreground="#808080"
+                                        IsVisible="{Binding !IsSelfClosing}" />
+
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
             </Grid>
 
 
@@ -133,8 +170,25 @@
 
             <Grid>
                 <TabControl Margin="5">
-                    <TabItem Header="Данные с сайта">
-                        <Grid>
+                    <TabItem Header="Информация о тэге">
+                        <Grid x:Name="PropertyTag" IsVisible="True">
+                            <ScrollViewer HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          VerticalScrollBarVisibility="Auto">
+                                <Grid Margin="0 10 0 0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="1"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock x:Name="TagName" FontSize="32" FontWeight="Bold" 
+                                               Foreground="#569CD6">ТЕСТимяТЭГА</TextBlock>
+
+                                    <Separator Grid.Row="1" Margin="0 5"/>
+
+                                </Grid>
+                            </ScrollViewer>
                         </Grid>
                     </TabItem>
                     <TabItem Header="Табличный вариант">

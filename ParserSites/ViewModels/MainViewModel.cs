@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using ParserSites.Model;
 using System.Collections.Generic;
 
 namespace ParserSites.ViewModels;
@@ -9,5 +10,5 @@ public partial class MainViewModel : ViewModelBase
     public partial string Greeting { get; set; } = "Welcome to Avalonia!";
 
     [ObservableProperty]
-    public partial List<string> GetSite { get; set; } = new List<string> ();
+    public partial List<Tag<object>> GetSite { get; set; } = new List<Tag<object>>();
 }

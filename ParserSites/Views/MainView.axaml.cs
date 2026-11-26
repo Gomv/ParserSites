@@ -59,7 +59,7 @@ public partial class MainView : UserControl
             {
                 Site = html;
 
-                var ddd = await Task.Run(() => AnalysisText(Site)); //Сделал заглушкой для получения результата
+                (this.DataContext as MainViewModel).GetSite = await Task.Run(() => AnalysisText(Site)); //Сделал заглушкой для получения результата
             }
         }
 
@@ -177,6 +177,7 @@ public partial class MainView : UserControl
                 {
                     if (IsSelfClosing(text, closeTag))
                     {
+                        lstParserLine[newIndex].IsSelfClosing = true;
                         lstParserLine[newIndex].EndPosition = closeTag + 1;
                         positionTag = closeTag + 1;
                         continue;
@@ -189,6 +190,7 @@ public partial class MainView : UserControl
 
                 if (IsSelfClosing(text, closeTag))
                 {
+                    lstParserLine[newIndex].IsSelfClosing = true;
                     lstParserLine[newIndex].EndPosition = closeTag + 1;
                     positionTag = closeTag + 1;
                     continue;
@@ -221,7 +223,24 @@ public partial class MainView : UserControl
             }
         }
 
+        FillDepthByPositions(lstParserLine);
         return lstParserLine;
+    }
+
+    private void FillDepthByPositions(List<Tag<object>> tags)
+    {
+        var stack = new Stack<int>();
+
+        for (int i = 0; i < tags.Count; i++)
+        {
+            while (stack.Count > 0 && tags[stack.Peek()].EndPosition < tags[i].Position)
+                stack.Pop();
+
+            tags[i].Depth = stack.Count;
+
+            if (!tags[i].IsSelfClosing)   // ← самозакрывающиеся не оборачивают ничего
+                stack.Push(i);
+        }
     }
 
     private int FindCloseTag(string text, string nameTag, int positionOpenTag)
@@ -269,5 +288,14 @@ public partial class MainView : UserControl
         if (index >= text.Length) return true;
         char c = text[index];
         return c == '>' || c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '/';
+    }
+
+    private void ListBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        PropertyTag.IsVisible = true;
+
+        Tag<object> tg = ((ListBox)sender).SelectedItem as Tag<object>;
+
+        TagName.Text = tg.Name;
     }
 }
