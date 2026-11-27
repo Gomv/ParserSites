@@ -110,42 +110,42 @@
             </Grid>
 
             <Grid Grid.Row="1" Margin="5 .75 0 5">
-            <ListBox BorderBrush="Black" BorderThickness=".5"
-                    ItemsSource="{Binding GetSite}"
-                    SelectionChanged="ListBox_SelectionChanged"
-                    CornerRadius="0 0 3 3">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Margin="{Binding Margin}" Orientation="Horizontal" Spacing="4">
-                        <TextBlock Text="&lt;" Foreground="#808080" />
-                        <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#569CD6" />
+                <ListBox BorderBrush="Black" BorderThickness=".5"
+                        ItemsSource="{Binding GetSite}"
+                        SelectionChanged="ListBox_SelectionChanged"
+                        CornerRadius="0 0 3 3">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="{Binding Margin}" Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="&lt;" Foreground="#808080" />
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#569CD6" />
                 
-                            <ItemsControl ItemsSource="{Binding Atribute}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal" Spacing="4" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" Spacing="4">
-                                            <TextBlock Text="{Binding Name}" Foreground="#9CDCFE" />
-                                            <TextBlock Text="=" Foreground="#D4D4D4" />
-                                            <TextBlock Text="{Binding Value}" Foreground="#CE9178" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                <ItemsControl ItemsSource="{Binding Atribute}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="4" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock Text="{Binding Name}" Foreground="#9CDCFE" />
+                                                <TextBlock Text="=" Foreground="#D4D4D4" />
+                                                <TextBlock Text="{Binding Value}" Foreground="#CE9178" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                 
-                            <TextBlock Text=" /&gt;" Foreground="#808080"
-                                        IsVisible="{Binding IsSelfClosing}" />
-                            <TextBlock Text="&gt;" Foreground="#808080"
-                                        IsVisible="{Binding !IsSelfClosing}" />
+                                <TextBlock Text=" /&gt;" Foreground="#808080"
+                                            IsVisible="{Binding IsSelfClosing}" />
+                                <TextBlock Text="&gt;" Foreground="#808080"
+                                            IsVisible="{Binding !IsSelfClosing}" />
 
-                        </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </Grid>
 
 
@@ -180,12 +180,38 @@
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="1"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="1"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock x:Name="TagName" FontSize="32" FontWeight="Bold" 
-                                               Foreground="#569CD6">ТЕСТимяТЭГА</TextBlock>
+                                    <TextBlock FontSize="32" FontWeight="Bold" Text="{Binding SelectedTag.Name}"
+                                               Foreground="#569CD6"/>
 
                                     <Separator Grid.Row="1" Margin="0 5"/>
+
+                                    <ListBox 
+                                            Background="Transparent"
+                                            ItemsSource="{Binding SelectedTag.Atribute}"
+                                            Margin="10"
+                                            Grid.Row="2"
+                                            x:Name="lstAttribute">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Spacing="5" Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Name}"/>
+                                                    <TextBlock Text="="/>
+                                                    <TextBlock Text="{Binding Value}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    
+                                    <Separator Grid.Row="3" Margin="0 5"/>
+                                    <TextBlock Grid.Row="4" FontSize="32" FontWeight="Bold" Margin="0 5"
+                                               Foreground="#569CD6">Значение</TextBlock>
+                                    <TextBlock Grid.Row="5" FontSize="14" FontWeight="Bold" Margin="0 5" Text="{Binding SelectedTag.Value}"/>
 
                                 </Grid>
                             </ScrollViewer>

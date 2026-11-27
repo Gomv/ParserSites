@@ -11,4 +11,7 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial List<Tag<object>> GetSite { get; set; } = new List<Tag<object>>();
+
+    [ObservableProperty]
+    public partial Tag<object> SelectedTag { get; set; }
 }

@@ -292,10 +292,6 @@ public partial class MainView : UserControl
 
     private void ListBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        PropertyTag.IsVisible = true;
-
-        Tag<object> tg = ((ListBox)sender).SelectedItem as Tag<object>;
-
-        TagName.Text = tg.Name;
+        (this.DataContext as MainViewModel).SelectedTag = ((ListBox)sender).SelectedItem as Tag<object>;
     }
 }
